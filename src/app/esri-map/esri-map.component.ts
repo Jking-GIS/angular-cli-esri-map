@@ -19,15 +19,17 @@ import {
   Input,
   Output,
   EventEmitter,
-  OnDestroy
+  OnDestroy,
 } from "@angular/core";
-import { loadModules } from "esri-loader";
+import { loadModules, setDefaultOptions } from "esri-loader";
 import esri = __esri; // Esri TypeScript Types
+
+setDefaultOptions({ version: "4.21" });
 
 @Component({
   selector: "app-esri-map",
   templateUrl: "./esri-map.component.html",
-  styleUrls: ["./esri-map.component.scss"]
+  styleUrls: ["./esri-map.component.scss"],
 })
 export class EsriMapComponent implements OnInit, OnDestroy {
   @Output() mapLoadedEvent = new EventEmitter<boolean>();
@@ -83,14 +85,17 @@ export class EsriMapComponent implements OnInit, OnDestroy {
   async initializeMap() {
     try {
       // Load the modules for the ArcGIS API for JavaScript
-      const [EsriMap, EsriMapView] = await loadModules([
-        "esri/Map",
-        "esri/views/MapView"
-      ]);
+      const [EsriMap, EsriMapView, EsriSketch, EsriGraphicsLayer] =
+        await loadModules([
+          "esri/Map",
+          "esri/views/MapView",
+          "esri/widgets/Sketch",
+          "esri/layers/GraphicsLayer",
+        ]);
 
       // Configure the Map
       const mapProperties: esri.MapProperties = {
-        basemap: this._basemap
+        basemap: this._basemap,
       };
 
       const map: esri.Map = new EsriMap(mapProperties);
@@ -100,11 +105,26 @@ export class EsriMapComponent implements OnInit, OnDestroy {
         container: this.mapViewEl.nativeElement,
         center: this._center,
         zoom: this._zoom,
-        map: map
+        map: map,
       };
 
       this._view = new EsriMapView(mapViewProperties);
       await this._view.when();
+
+      const graphicsLayer = new EsriGraphicsLayer({
+        title: "Sketch",
+      });
+      const sketch = new EsriSketch({
+        layer: graphicsLayer,
+        view: this._view,
+        creationMode: "update",
+      });
+
+      map.add(graphicsLayer);
+      this._view.ui.add(sketch, {
+        position: "top-right",
+      });
+
       return this._view;
     } catch (error) {
       console.log("EsriLoader: ", error);
@@ -113,7 +133,7 @@ export class EsriMapComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     // Initialize MapView and return an instance of MapView
-    this.initializeMap().then(mapView => {
+    this.initializeMap().then((mapView) => {
       // The map has been initialized
       console.log("mapView ready: ", this._view.ready);
       this._loaded = this._view.ready;

@@ -122,6 +122,10 @@
           }
         }
       }
-    }},
-  "defaultProject": "angular-cli-esri-map"
+    }
+  },
+  "defaultProject": "angular-cli-esri-map",
+  "cli": {
+    "analytics": "43ee76d9-f7e4-4466-b45d-6777bd462d92"
+  }
 }
